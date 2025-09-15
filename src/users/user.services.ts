@@ -59,4 +59,8 @@ export default class UserService {
 
         return { token };
     }
+
+    async updateRole(userId: string, role: string): Promise<UserWithOutPassword | null> {
+        return await this.userAuth.updateRole(userId, role);
+    }
 }

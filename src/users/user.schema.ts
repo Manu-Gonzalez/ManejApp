@@ -1,5 +1,19 @@
 import { z } from "zod";
 import { Request, Response, NextFunction } from "express";
+// Normalización de roles: acepta valores en español y mapea al enum del backend
+const ROLE_ENUM = ["STUDENT", "INSTRUCTOR", "ADMIN"] as const;
+
+const normalizeRole = (val: unknown) => {
+  if (typeof val !== "string") return val;
+  const key = val.trim().toUpperCase();
+  const map: Record<string, string> = {
+    ALUMNO: "STUDENT",
+    STUDENT: "STUDENT",
+    INSTRUCTOR: "INSTRUCTOR",
+    ADMIN: "ADMIN",
+  };
+  return map[key] ?? key;
+};
 
 export const userSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -28,6 +42,11 @@ export const loginSchema = z.object({
 
 export const getUserByRoleSchema = z.object({
   role: z.enum(["STUDENT", "INSTRUCTOR", "ADMIN"]),
+});
+
+export const updateRoleSchema = z.object({
+  // Acepta valores en español (p.ej. "Alumno") y normaliza al enum Prisma
+  role: z.preprocess(normalizeRole, z.enum(["STUDENT", "INSTRUCTOR", "ADMIN"])),
 });
 
 export type ParamsInput = z.infer<typeof getUserByRoleSchema>;

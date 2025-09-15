@@ -13,7 +13,7 @@ export default class UserController {
             const user: UserWithDates = req.body;
             const newUser = await this.userService.register(user);
             // Si el registro es exitoso, devolvemos el token
-            if (newUser.name == "PrismaClientKnownRequestError"){
+            if (newUser instanceof Error){
                 return next(new CustomizedError("El usuario que intenta registrar ya existe", 409))
             }
             
@@ -45,7 +45,7 @@ export default class UserController {
         }
     };
 
-    public gerUserById : ExpressFunction = async (req, res, next) =>{
+    public getUserById : ExpressFunction = async (req, res, next) =>{
          try {
             const value = req.params.value;
             const user = await this.userService.getUserById(value);
@@ -76,4 +76,17 @@ export default class UserController {
             next(error);
         }
     };
+
+    // PATCH /users/:id/role
+    public updateRole: ExpressFunction = async (req, res, next) => {
+    try {
+        const userId = req.params.id;
+        const { role } = req.body;
+        const user = await this.userService.updateRole(userId, role.toUpperCase());
+        return res.json(user);
+    } catch (e) {
+        next(e);
+    }
+    };
+
 }

@@ -5,6 +5,22 @@ import { UserRepository } from "./userRepository"
 import { prisma } from "../../config/prismaClient";
 import { error } from "console";
 
+// Mapeo seguro de roles String -> enum literal compatible
+const mapRole = (val: string): "STUDENT" | "INSTRUCTOR" | "ADMIN" => {
+  const key = (val ?? "").toUpperCase().trim();
+  switch (key) {
+    case "STUDENT":
+    case "ALUMNO":
+      return "STUDENT";
+    case "INSTRUCTOR":
+      return "INSTRUCTOR";
+    case "ADMIN":
+      return "ADMIN";
+    default:
+      throw new Error("Rol no válido");
+  }
+};
+
 export default class UserPrismaRepository implements UserRepository {
 
     // ... (El método register() y getAllUsers() permanecen igual, sin cambios) ...
@@ -22,7 +38,7 @@ export default class UserPrismaRepository implements UserRepository {
                 dni: dni,
                 password: password,
                 birthDate: birthDateObject, 
-                role: 'STUDENT',
+                role: 'STUDENT' as any,
             },
             select: {
                 id: true,
@@ -60,7 +76,7 @@ export default class UserPrismaRepository implements UserRepository {
    async findByRole(rol: string): Promise<UserWithOutPassword[]> {
     return await prisma.user.findMany({
         where: {
-        role: rol as any, 
+        role: mapRole(rol) as any,
         },
         select: {
         id: true,
@@ -87,6 +103,40 @@ export default class UserPrismaRepository implements UserRepository {
         // Omitimos la contraseña antes de devolver
         const { password, ...userWithoutPassword } = user;
         return userWithoutPassword;
+    }
+
+    async updateRole(userId: string, role: string): Promise<UserWithOutPassword | null> {
+        const id = typeof userId === "number" ? userId : parseInt(userId, 10);
+
+        const newRole = mapRole(role);
+
+        // 1) Actualizar el rol del usuario
+        const user = await prisma.user.update({
+            where: { id },
+            data: { role: { set: newRole } as any },
+            select: {
+                id: true,
+                dni: true,
+                email: true,
+                name: true,
+                surname: true,
+                role: true,
+                createdAt: true,
+                birthDate: true,
+                isActive: true,
+            }
+        });
+
+        // 2) Si el nuevo rol es STUDENT, asegurar registro en la tabla Student
+        if (newRole === "STUDENT") {
+            await prisma.student.upsert({
+                where: { userId: id },
+                create: { userId: id },
+                update: {},
+            });
+        }
+
+        return user;
     }
 
     async findUser(value: string | number): Promise<UserWithOutPassword | undefined> {

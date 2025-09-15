@@ -4,7 +4,6 @@ import { User as UserInterface, UserWithOutPassword} from "src/users/user.types"
 import SessionRepository  from "./repositories/SessionRepository"
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../shared/utils/jwtUtils";
 import { REFRESH_COOKIE_NAME, refreshCookieOptions } from "../config/cookies";
-import { PrismaClient } from "@prisma/client";
 import { UserRepository } from "src/users/repositories/userRepository";
 import CustomizedError from "@shared/classes/CustomizedError";
 
